@@ -42,7 +42,6 @@ const config: HardhatUserConfig = {
       'contracts/diamond/contracts/facets/DiamondCutFacet.sol',
       'contracts/diamond/contracts/facets/DiamondLoupeFacet.sol',
       'contracts/diamond/contracts/facets/OwnershipFacet.sol',
-      'contracts/adapter/dynamic-receive/DynamicReceiveAdapter.sol',
     ],
   },
 };
