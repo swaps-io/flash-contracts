@@ -36,6 +36,7 @@ const config: HardhatUserConfig = {
       'contracts/order-bitcoin/OrderBitcoinReserverFacet.sol',
       'contracts/storage/Unified3HashStorage.sol',
       'contracts/permit/TokenPermitterFacet.sol',
+      'contracts/permit/TokenPermitterSafeFacet.sol',
       'contracts/utils/MulticallFacet.sol',
       'contracts/utils/CallEstimatorFacet.sol',
       'contracts/diamond/contracts/Diamond.sol',
