@@ -10,7 +10,6 @@ import {Estimator} from "../utils/Estimator.sol";
 
 import {OrderActorHashLib} from "../order/OrderActorHashLib.sol";
 import {OrderSenderLib, OrderSenderStorage} from "../order/OrderSenderLib.sol";
-import {OrderSenderNativeLib} from "../order/OrderSenderNativeLib.sol";
 
 import {NativeLib} from "../native/NativeLib.sol";
 
@@ -20,7 +19,7 @@ import {OrderBitcoinHashLib, OrderBitcoin} from "./OrderBitcoinHashLib.sol";
 
 contract OrderBitcoinSendNativeEstimatorFacet is IOrderBitcoinSendNativeEstimator, Estimator {
     function estimateSendOrderBitcoinAssetNative(OrderBitcoin calldata order_, address caller_) external payable onlyEstimate {
-        _estimateSendOrderBitcoinAssetNative(order_, caller_, OrderSenderNativeLib.VALUE_ORIGINAL_BIT);
+        _estimateSendOrderBitcoinAssetNative(order_, caller_, NativeLib.VALUE_ORIGINAL_BIT);
     }
 
     function estimateSendOrderBitcoinAssetNative(OrderBitcoin calldata order_, address caller_, uint256 value_) external payable onlyEstimate {
@@ -28,7 +27,7 @@ contract OrderBitcoinSendNativeEstimatorFacet is IOrderBitcoinSendNativeEstimato
     }
 
     function estimateSendOrderBitcoinLiqAssetNative(OrderBitcoin calldata order_, address caller_) external payable onlyEstimate {
-        _estimateSendOrderBitcoinLiqAssetNative(order_, caller_, OrderSenderNativeLib.VALUE_ORIGINAL_BIT);
+        _estimateSendOrderBitcoinLiqAssetNative(order_, caller_, NativeLib.VALUE_ORIGINAL_BIT);
     }
 
     function estimateSendOrderBitcoinLiqAssetNative(OrderBitcoin calldata order_, address caller_, uint256 value_) external payable onlyEstimate {
@@ -42,7 +41,7 @@ contract OrderBitcoinSendNativeEstimatorFacet is IOrderBitcoinSendNativeEstimato
 
         BitStorageLib.storeBit(orderSendEventHash);
 
-        OrderSenderNativeLib.sendOrderAsset(order_.fromActorReceiver, caller_, order_.toAmount, value_);
+        NativeLib.transferFrom(caller_, order_.fromActorReceiver, order_.toAmount, value_);
 
         emit AssetSend(orderHash);
     }
@@ -57,7 +56,7 @@ contract OrderBitcoinSendNativeEstimatorFacet is IOrderBitcoinSendNativeEstimato
         bytes32 orderActorHash = OrderActorHashLib.calcOrderActorHash(orderHash, caller_);
         BitStorageLib.storeBit(EventHashLib.calcEventHash(OrderSenderLib.ASSET_LIQ_SEND_SIG, orderActorHash));
 
-        OrderSenderNativeLib.sendOrderAsset(order_.fromActorReceiver, caller_, order_.toAmount, value_);
+        NativeLib.transferFrom(caller_, order_.fromActorReceiver, order_.toAmount, value_);
 
         emit AssetLiqSend(orderActorHash, orderHash, caller_);
     }

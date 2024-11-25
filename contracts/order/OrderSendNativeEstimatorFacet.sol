@@ -15,11 +15,10 @@ import {IOrderSendNativeEstimator} from "./interfaces/IOrderSendNativeEstimator.
 import {OrderHashLib, Order} from "./OrderHashLib.sol";
 import {OrderActorHashLib} from "./OrderActorHashLib.sol";
 import {OrderSenderLib, OrderSenderStorage} from "./OrderSenderLib.sol";
-import {OrderSenderNativeLib} from "./OrderSenderNativeLib.sol";
 
 contract OrderSendNativeEstimatorFacet is IOrderSendNativeEstimator, Estimator {
     function estimateSendOrderAssetNative(Order calldata order_, address caller_) external payable onlyEstimate {
-        _estimateSendOrderAssetNative(order_, caller_, OrderSenderNativeLib.VALUE_ORIGINAL_BIT);
+        _estimateSendOrderAssetNative(order_, caller_, NativeLib.VALUE_ORIGINAL_BIT);
     }
 
     function estimateSendOrderAssetNative(Order calldata order_, address caller_, uint256 value_) external payable onlyEstimate {
@@ -27,7 +26,7 @@ contract OrderSendNativeEstimatorFacet is IOrderSendNativeEstimator, Estimator {
     }
 
     function estimateSendOrderLiqAssetNative(Order calldata order_, address caller_) external payable onlyEstimate {
-        _estimateSendOrderLiqAssetNative(order_, caller_, OrderSenderNativeLib.VALUE_ORIGINAL_BIT);
+        _estimateSendOrderLiqAssetNative(order_, caller_, NativeLib.VALUE_ORIGINAL_BIT);
     }
 
     function estimateSendOrderLiqAssetNative(Order calldata order_, address caller_, uint256 value_) external payable onlyEstimate {
@@ -41,7 +40,7 @@ contract OrderSendNativeEstimatorFacet is IOrderSendNativeEstimator, Estimator {
 
         BitStorageLib.storeBit(orderSendEventHash);
 
-        OrderSenderNativeLib.sendOrderAsset(order_.fromActorReceiver, caller_, order_.toAmount, value_);
+        NativeLib.transferFrom(caller_, order_.fromActorReceiver, order_.toAmount, value_);
 
         emit AssetSend(orderHash);
     }
@@ -56,7 +55,7 @@ contract OrderSendNativeEstimatorFacet is IOrderSendNativeEstimator, Estimator {
         bytes32 orderActorHash = OrderActorHashLib.calcOrderActorHash(orderHash, caller_);
         BitStorageLib.storeBit(EventHashLib.calcEventHash(OrderSenderLib.ASSET_LIQ_SEND_SIG, orderActorHash));
 
-        OrderSenderNativeLib.sendOrderAsset(order_.fromActorReceiver, caller_, order_.toAmount, value_);
+        NativeLib.transferFrom(caller_, order_.fromActorReceiver, order_.toAmount, value_);
 
         emit AssetLiqSend(orderActorHash, orderHash, caller_);
     }

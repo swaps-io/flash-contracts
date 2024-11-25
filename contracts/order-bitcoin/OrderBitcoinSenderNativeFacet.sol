@@ -9,7 +9,6 @@ import {EventHashLib} from "../utils/EventHashLib.sol";
 
 import {OrderActorHashLib} from "../order/OrderActorHashLib.sol";
 import {OrderSenderLib, OrderSenderStorage} from "../order/OrderSenderLib.sol";
-import {OrderSenderNativeLib} from "../order/OrderSenderNativeLib.sol";
 
 import {NativeLib} from "../native/NativeLib.sol";
 
@@ -25,7 +24,7 @@ contract OrderBitcoinSenderNativeFacet is IOrderBitcoinSenderNative {
 
         BitStorageLib.storeBit(orderSendEventHash);
 
-        OrderSenderNativeLib.sendOrderAsset(order_.fromActorReceiver, msg.sender, order_.toAmount);
+        NativeLib.transferFrom(msg.sender, order_.fromActorReceiver, order_.toAmount);
 
         emit AssetSend(orderHash);
     }
@@ -40,7 +39,7 @@ contract OrderBitcoinSenderNativeFacet is IOrderBitcoinSenderNative {
         bytes32 orderActorHash = OrderActorHashLib.calcOrderActorHash(orderHash, msg.sender);
         BitStorageLib.storeBit(EventHashLib.calcEventHash(OrderSenderLib.ASSET_LIQ_SEND_SIG, orderActorHash));
 
-        OrderSenderNativeLib.sendOrderAsset(order_.fromActorReceiver, msg.sender, order_.toAmount);
+        NativeLib.transferFrom(msg.sender, order_.fromActorReceiver, order_.toAmount);
 
         emit AssetLiqSend(orderActorHash, orderHash, msg.sender);
     }

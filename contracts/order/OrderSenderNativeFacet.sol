@@ -14,7 +14,6 @@ import {IOrderSenderNative} from "./interfaces/IOrderSenderNative.sol";
 import {OrderHashLib, Order} from "./OrderHashLib.sol";
 import {OrderActorHashLib} from "./OrderActorHashLib.sol";
 import {OrderSenderLib, OrderSenderStorage} from "./OrderSenderLib.sol";
-import {OrderSenderNativeLib} from "./OrderSenderNativeLib.sol";
 
 contract OrderSenderNativeFacet is IOrderSenderNative {
     function sendOrderAssetNative(Order calldata order_) external payable {
@@ -24,7 +23,7 @@ contract OrderSenderNativeFacet is IOrderSenderNative {
 
         BitStorageLib.storeBit(orderSendEventHash);
 
-        OrderSenderNativeLib.sendOrderAsset(order_.fromActorReceiver, msg.sender, order_.toAmount);
+        NativeLib.transferFrom(msg.sender, order_.fromActorReceiver, order_.toAmount);
 
         emit AssetSend(orderHash);
     }
@@ -39,7 +38,7 @@ contract OrderSenderNativeFacet is IOrderSenderNative {
         bytes32 orderActorHash = OrderActorHashLib.calcOrderActorHash(orderHash, msg.sender);
         BitStorageLib.storeBit(EventHashLib.calcEventHash(OrderSenderLib.ASSET_LIQ_SEND_SIG, orderActorHash));
 
-        OrderSenderNativeLib.sendOrderAsset(order_.fromActorReceiver, msg.sender, order_.toAmount);
+        NativeLib.transferFrom(msg.sender, order_.fromActorReceiver, order_.toAmount);
 
         emit AssetLiqSend(orderActorHash, orderHash, msg.sender);
     }
