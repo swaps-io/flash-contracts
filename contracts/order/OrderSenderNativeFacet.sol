@@ -17,7 +17,7 @@ import {OrderSenderLib, OrderSenderStorage} from "./OrderSenderLib.sol";
 import {OrderSenderNativeLib} from "./OrderSenderNativeLib.sol";
 
 contract OrderSenderNativeFacet is IOrderSenderNative {
-    function sendOrderAssetNative(Order calldata order_) external {
+    function sendOrderAssetNative(Order calldata order_) external payable {
         if (!EnvLib.isActiveDeadline(order_.deadline + order_.timeToSend)) revert OrderSendExpired();
         if (msg.sender != order_.toActor) revert SendCallerMismatch();
         (bytes32 orderHash, bytes32 orderSendEventHash) = _validateOrder(order_);
@@ -29,7 +29,7 @@ contract OrderSenderNativeFacet is IOrderSenderNative {
         emit AssetSend(orderHash);
     }
 
-    function sendOrderLiqAssetNative(Order calldata order_) external {
+    function sendOrderLiqAssetNative(Order calldata order_) external payable {
         if (EnvLib.isActiveDeadline(order_.deadline + order_.timeToSend)) revert OrderLiqSendUnreached();
         if (!EnvLib.isActiveDeadline(order_.deadline + order_.timeToSend + order_.timeToLiqSend)) revert OrderLiqSendExpired();
         (bytes32 orderHash, ) = _validateOrder(order_);

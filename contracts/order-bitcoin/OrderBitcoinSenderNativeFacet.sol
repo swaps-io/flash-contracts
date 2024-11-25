@@ -18,7 +18,7 @@ import {IOrderBitcoinSenderNative} from "./interfaces/IOrderBitcoinSenderNative.
 import {OrderBitcoinHashLib, OrderBitcoin} from "./OrderBitcoinHashLib.sol";
 
 contract OrderBitcoinSenderNativeFacet is IOrderBitcoinSenderNative {
-    function sendOrderBitcoinAssetNative(OrderBitcoin calldata order_) external {
+    function sendOrderBitcoinAssetNative(OrderBitcoin calldata order_) external payable {
         if (!EnvLib.isActiveDeadline(order_.deadline + order_.timeToSend)) revert OrderSendExpired();
         if (msg.sender != order_.toActor) revert SendCallerMismatch();
         (bytes32 orderHash, bytes32 orderSendEventHash) = _validateOrder(order_);
@@ -30,7 +30,7 @@ contract OrderBitcoinSenderNativeFacet is IOrderBitcoinSenderNative {
         emit AssetSend(orderHash);
     }
 
-    function sendOrderBitcoinLiqAssetNative(OrderBitcoin calldata order_) external {
+    function sendOrderBitcoinLiqAssetNative(OrderBitcoin calldata order_) external payable {
         if (EnvLib.isActiveDeadline(order_.deadline + order_.timeToSend)) revert OrderLiqSendUnreached();
         if (!EnvLib.isActiveDeadline(order_.deadline + order_.timeToSend + order_.timeToLiqSend)) revert OrderLiqSendExpired();
         (bytes32 orderHash, ) = _validateOrder(order_);
