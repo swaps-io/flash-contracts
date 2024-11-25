@@ -17,11 +17,11 @@ library NativeLib {
     uint256 internal constant VALUE_SKIP_SEND_BIT = 1 << 254;
 
     function transferFrom(address sender_, address receiver_, uint256 amount_) internal {
-        _transferFrom(sender_, receiver_, amount_, msg.value);
+        _transferFrom(sender_, receiver_, amount_, _originalValue(sender_));
     }
 
     function transferFrom(address sender_, address receiver_, uint256 amount_, uint256 value_) internal {
-        if (value_ & VALUE_ORIGINAL_BIT != 0) _transferFrom(sender_, receiver_, amount_, msg.value);
+        if (value_ & VALUE_ORIGINAL_BIT != 0) _transferFrom(sender_, receiver_, amount_, _originalValue(sender_));
         else if (value_ & VALUE_SKIP_SEND_BIT == 0) _transferFrom(sender_, receiver_, amount_, value_);
     }
 
@@ -35,5 +35,9 @@ library NativeLib {
             Address.sendValue(payable(sender_), value_ - amount_); // Refund excessive value
         }
         Address.sendValue(payable(receiver_), amount_);
+    }
+
+    function _originalValue(address sender_) private view returns (uint256) {
+        return sender_ == msg.sender ? msg.value : 0;
     }
 }
