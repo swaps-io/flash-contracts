@@ -11,6 +11,8 @@ import {OrderActorHashLib} from "../order/OrderActorHashLib.sol";
 import {OrderSenderLib, OrderSenderStorage} from "../order/OrderSenderLib.sol";
 import {OrderSenderNativeLib} from "../order/OrderSenderNativeLib.sol";
 
+import {NativeLib} from "../native/NativeLib.sol";
+
 import {IOrderBitcoinSenderNative} from "./interfaces/IOrderBitcoinSenderNative.sol";
 
 import {OrderBitcoinHashLib, OrderBitcoin} from "./OrderBitcoinHashLib.sol";
@@ -48,6 +50,6 @@ contract OrderBitcoinSenderNativeFacet is IOrderBitcoinSenderNative {
         orderHash = OrderBitcoinHashLib.calcOrderHash(order_);
         orderSendEventHash = EventHashLib.calcEventHash(OrderSenderLib.ASSET_SEND_SIG, orderHash);
         if (OrderSenderLib.orderAssetSent(orderHash, orderSendEventHash)) revert OrderAlreadySent();
-        if (order_.toToken != OrderSenderNativeLib.NATIVE_ADDRESS) revert OrderSendNotNative();
+        if (order_.toToken != NativeLib.NATIVE_ADDRESS) revert OrderSendNotNative();
     }
 }

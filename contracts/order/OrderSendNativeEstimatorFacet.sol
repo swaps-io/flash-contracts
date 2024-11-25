@@ -8,6 +8,8 @@ import {EnvLib} from "../utils/EnvLib.sol";
 import {EventHashLib} from "../utils/EventHashLib.sol";
 import {Estimator} from "../utils/Estimator.sol";
 
+import {NativeLib} from "../native/NativeLib.sol";
+
 import {IOrderSendNativeEstimator} from "./interfaces/IOrderSendNativeEstimator.sol";
 
 import {OrderHashLib, Order} from "./OrderHashLib.sol";
@@ -48,6 +50,6 @@ contract OrderSendNativeEstimatorFacet is IOrderSendNativeEstimator, Estimator {
         orderHash = OrderHashLib.calcOrderHash(order_);
         orderSendEventHash = EventHashLib.calcEventHash(OrderSenderLib.ASSET_SEND_SIG, orderHash);
         if (OrderSenderLib.orderAssetSent(orderHash, orderSendEventHash)) revert OrderAlreadySent();
-        if (order_.toToken != OrderSenderNativeLib.NATIVE_ADDRESS) revert OrderSendNotNative();
+        if (order_.toToken != NativeLib.NATIVE_ADDRESS) revert OrderSendNotNative();
     }
 }

@@ -7,6 +7,8 @@ import {BitStorageLib} from "../storage/BitStorageLib.sol";
 import {EnvLib} from "../utils/EnvLib.sol";
 import {EventHashLib} from "../utils/EventHashLib.sol";
 
+import {NativeLib} from "../native/NativeLib.sol";
+
 import {IOrderSenderNative} from "./interfaces/IOrderSenderNative.sol";
 
 import {OrderHashLib, Order} from "./OrderHashLib.sol";
@@ -47,6 +49,6 @@ contract OrderSenderNativeFacet is IOrderSenderNative {
         orderHash = OrderHashLib.calcOrderHash(order_);
         orderSendEventHash = EventHashLib.calcEventHash(OrderSenderLib.ASSET_SEND_SIG, orderHash);
         if (OrderSenderLib.orderAssetSent(orderHash, orderSendEventHash)) revert OrderAlreadySent();
-        if (order_.toToken != OrderSenderNativeLib.NATIVE_ADDRESS) revert OrderSendNotNative();
+        if (order_.toToken != NativeLib.NATIVE_ADDRESS) revert OrderSendNotNative();
     }
 }
