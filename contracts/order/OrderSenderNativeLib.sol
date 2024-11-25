@@ -11,9 +11,9 @@ import {NativeTokenLib} from "../native/NativeTokenLib.sol";
 library OrderSenderNativeLib {
     using SafeERC20 for IERC20Native;
 
-    function sendOrderAsset(address fromActor_, uint256 toAmount_) internal {
+    function sendOrderAsset(address fromActor_, address toActor_, uint256 toAmount_) internal {
         IERC20Native nativeToken = NativeTokenLib.store().nativeToken;
-        nativeToken.safeTransferFrom(msg.sender, address(this), toAmount_);
+        nativeToken.safeTransferFrom(toActor_, address(this), toAmount_);
         nativeToken.withdraw(toAmount_);
         Address.sendValue(payable(fromActor_), toAmount_);
     }
