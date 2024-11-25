@@ -22,6 +22,7 @@ const config: HardhatUserConfig = {
       'contracts/order/OrderReceiverFacet.sol',
       'contracts/order/OrderReceiveEstimatorFacet.sol',
       'contracts/order/OrderReceiverManualNativeFacet.sol',
+      'contracts/order/OrderReceiveManualNativeEstimatorFacet.sol',
       'contracts/order/OrderSenderFacet.sol',
       'contracts/order/OrderSendEstimatorFacet.sol',
       'contracts/order/OrderSenderNativeFacet.sol',
