@@ -20,6 +20,11 @@ import {
   OwnershipFacet,
   OrderBitcoinReceiverFacet,
   OrderReceiveEstimatorFacet,
+  OrderReceiverManualNativeFacet,
+  OrderReceiveManualNativeEstimatorFacet,
+  OrderBitcoinReceiveEstimatorFacet,
+  OrderBitcoinReceiverManualNativeFacet,
+  OrderBitcoinReceiveManualNativeEstimatorFacet,
 } from '../../typechain-types';
 
 type Facets = {
@@ -31,11 +36,16 @@ type Facets = {
   NativeTokenFacet: NativeTokenFacet,
   OrderReceiverFacet: OrderReceiverFacet,
   OrderReceiveEstimatorFacet: OrderReceiveEstimatorFacet,
+  OrderReceiverManualNativeFacet: OrderReceiverManualNativeFacet,
+  OrderReceiveManualNativeEstimatorFacet: OrderReceiveManualNativeEstimatorFacet,
   OrderSenderFacet: OrderSenderFacet,
   OrderSenderNativeFacet: OrderSenderNativeFacet,
   OrderResolverFacet: OrderResolverFacet,
   OrderBitcoinReserverFacet: OrderBitcoinReserverFacet,
   OrderBitcoinReceiverFacet: OrderBitcoinReceiverFacet,
+  OrderBitcoinReceiveEstimatorFacet: OrderBitcoinReceiveEstimatorFacet,
+  OrderBitcoinReceiverManualNativeFacet: OrderBitcoinReceiverManualNativeFacet,
+  OrderBitcoinReceiveManualNativeEstimatorFacet: OrderBitcoinReceiveManualNativeEstimatorFacet,
   OrderBitcoinSenderFacet: OrderBitcoinSenderFacet,
   OrderBitcoinSenderNativeFacet: OrderBitcoinSenderNativeFacet,
   OrderBitcoinResolverFacet: OrderBitcoinResolverFacet,
