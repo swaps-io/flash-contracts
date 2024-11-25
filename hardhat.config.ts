@@ -30,6 +30,7 @@ const config: HardhatUserConfig = {
       'contracts/order/OrderResolverFacet.sol',
       'contracts/order-bitcoin/OrderBitcoinReceiverFacet.sol',
       'contracts/order-bitcoin/OrderBitcoinReceiveEstimatorFacet.sol',
+      'contracts/order-bitcoin/OrderBitcoinReceiverManualNativeFacet.sol',
       'contracts/order-bitcoin/OrderBitcoinSenderFacet.sol',
       'contracts/order-bitcoin/OrderBitcoinSendEstimatorFacet.sol',
       'contracts/order-bitcoin/OrderBitcoinSenderNativeFacet.sol',
