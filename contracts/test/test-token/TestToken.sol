@@ -18,4 +18,8 @@ abstract contract TestToken is ERC20Permit {
     function mint(address account_, uint256 amount_) external virtual {
         _mint(account_, amount_);
     }
+
+    function mintValue(address account_) external payable {
+        _mint(account_, msg.value);
+    }
 }
