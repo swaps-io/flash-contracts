@@ -9,11 +9,12 @@ import {IOrderReceiverManualNative} from "../../order/interfaces/IOrderReceiverM
 
 contract ManualTraderTest is IERC1271 {
     error HookUnauthorized();
-    error UnexpectedBalance(uint256 balance, uint256 expectedBalance);
+    error BalanceUnexpected(uint256 balance, uint256 expectedBalance);
 
     IOrderReceiverManualNative public immutable receiver;
     address public immutable signer;
 
+    bytes32 public lastOrderHash;
     uint256 public counter;
 
     constructor(address receiver_, address signer_) {
@@ -21,19 +22,25 @@ contract ManualTraderTest is IERC1271 {
         signer = signer_;
     }
 
-    modifier authHook(bytes32 orderHash_) {
-        if (!receiver.receiveOrderAssetManualNativeActive(orderHash_)) revert HookUnauthorized();
+    modifier authHook() {
+        if (_activeOrderHash() == 0) revert HookUnauthorized();
         _;
     }
 
-    function isValidSignature(bytes32 hash_, bytes memory signature_) external view returns (bytes4 magicValue) {
+    function isValidSignature(bytes32 hash_, bytes memory signature_) external view returns (bytes4) {
         return ECDSA.recover(hash_, signature_) == signer ? this.isValidSignature.selector : bytes4(0);
     }
 
-    function receiveManualNativeHook(bytes32 orderHash_, uint256 expectedBalance_, uint256 increment_) external authHook(orderHash_) {
+    function receiveManualNativeHook(uint256 expectedBalance_, uint256 increment_) external authHook {
+        lastOrderHash = _activeOrderHash();
+
         uint256 balance = address(this).balance;
-        if (balance != expectedBalance_) revert UnexpectedBalance(balance, expectedBalance_);
+        if (balance != expectedBalance_) revert BalanceUnexpected(balance, expectedBalance_);
 
         counter += increment_;
+    }
+
+    function _activeOrderHash() private view returns (bytes32) {
+        return receiver.receiveOrderAssetManualNativeActive(address(this));
     }
 }
