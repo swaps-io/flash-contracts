@@ -75,6 +75,9 @@ describe('OrderReceiverManualNativeTest', function () {
       ]),
     );
 
+    const ManualTraderTest = await ethers.getContractFactory('ManualTraderTest');
+    const trader = await ManualTraderTest.deploy(flash, anotherAccount);
+
     const nonce = await calcOrderManualReceiveNonce({
       nonce: 13377331n,
       postData: EMPTY_POST_DATA,
@@ -114,6 +117,7 @@ describe('OrderReceiverManualNativeTest', function () {
       order,
       orderHash,
       receiveEventHash,
+      trader,
     };
   }
 
@@ -176,6 +180,15 @@ describe('OrderReceiverManualNativeTest', function () {
         EMPTY_POST_DATA,
       ),
       { customError: `AddressEmptyCode("${ZeroAddress}")` },
+    );
+
+    await expectRevert(
+      (await facet(flash, 'OrderReceiverManualNativeFacet')).connect(accounts.other).receiveOrderAssetManualNative(
+        order,
+        orderToSignature,
+        '0x01', // Does not match 'EMPTY_POST_DATA' hash stored in 'nonce'
+      ),
+      { customError: 'OrderInvalidPostData()' },
     );
 
     const otherBalanceBefore = await ethers.provider.getBalance(accounts.other.address);
@@ -246,5 +259,19 @@ describe('OrderReceiverManualNativeTest', function () {
         ),
       );
     }
+  });
+
+  it('Should receive order asset with post data', async function () {
+    const {
+      accounts,
+      flash,
+      collateralManager,
+      order,
+      orderHash,
+      receiveEventHash,
+      trader,
+    } = await loadFixture(deployFixture);
+
+    // TODO
   });
 });
