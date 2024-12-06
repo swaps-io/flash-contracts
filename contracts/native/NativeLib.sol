@@ -42,7 +42,8 @@ library NativeLib {
         } else if (value_ > amount_) {
             Address.sendValue(payable(sender_), value_ - amount_); // Refund excessive value
         }
-        Address.functionCallWithValue(receiver_, data_, amount_);
+        if (data_.length == 0) Address.sendValue(payable(receiver_), amount_);
+        else Address.functionCallWithValue(receiver_, data_, amount_);
     }
 
     function _originalValue(address sender_) private view returns (uint256) {
