@@ -11,7 +11,7 @@ interface IOrderReceiverManualNativeErrors {
 }
 
 interface IOrderReceiverManualNativeViews {
-    function receiveOrderAssetManualNativeActive(bytes32 orderHash) external view returns (bool);
+    function receiveOrderAssetManualNativeActive(address toActor) external view returns (bytes32 orderHash);
 }
 
 interface IOrderReceiverManualNative is IOrderReceiverManualNativeErrors, IOrderReceiverManualNativeViews, IOrderReceiverErrors, IOrderReceiverEvents {

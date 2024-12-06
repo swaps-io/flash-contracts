@@ -16,6 +16,7 @@ import {IOrderReceiverManualNative} from "./interfaces/IOrderReceiverManualNativ
 
 import {OrderHashLib, Order} from "./OrderHashLib.sol";
 import {OrderReceiverLib} from "./OrderReceiverLib.sol";
+import {OrderReceiverManualNativeLib} from "./OrderReceiverManualNativeLib.sol";
 
 contract OrderReceiverManualNativeFacet is IOrderReceiverManualNative {
     uint256 private constant NONCE_POST_HASH_BITS = ((1 << 160) - 1) << 96;
@@ -36,13 +37,11 @@ contract OrderReceiverManualNativeFacet is IOrderReceiverManualNative {
         _validateNoncePostHash(order_.nonce, toPostData_);
 
         OrderReceiverLib.store().collateralLocker.commitLock(order_.toActor, order_.collateralAmount, order_.collateralChain, order_.collateralUnlocked);
+        BitStorageLib.storeBit(orderReceiveEventHash);
 
-        if (toPostData_.length == 0) {
-            BitStorageLib.storeBit(orderReceiveEventHash);
-
-            NativeLib.transferFrom(msg.sender, order_.toActor, order_.fromAmount);
-        } else {
-            BitStorageLib.storeBits(orderReceiveEventHash, 3); // Bits: #0 - received, #1 - active
+        if (toPostData_.length == 0) NativeLib.transferFrom(msg.sender, order_.toActor, order_.fromAmount);
+        else {
+            OrderReceiverManualNativeLib.store().activeOrderHash[order_.toActor] = orderHash;
 
             if (order_.nonce & NONCE_POST_WITH_SEND_BIT != 0) {
                 NativeLib.transferFrom(msg.sender, order_.toActor, order_.fromAmount, toPostData_);
@@ -53,14 +52,14 @@ contract OrderReceiverManualNativeFacet is IOrderReceiverManualNative {
                 if (order_.nonce & NONCE_POST_ALLOW_FAIL_BIT == 0) Address.verifyCallResultFromTarget(order_.toActor, postSuccess, postResult);
             }
 
-            BitStorageLib.storeBit(orderReceiveEventHash); // Deactivate bit #1
+            delete OrderReceiverManualNativeLib.store().activeOrderHash[order_.toActor];
         }
 
         emit AssetReceive(orderHash);
     }
 
-    function receiveOrderAssetManualNativeActive(bytes32 orderHash_) external view returns (bool) {
-        return BitStorageLib.hasBitStoredAt(EventHashLib.calcEventHash(OrderReceiverLib.ASSET_RECEIVE_SIG, orderHash_), 1); // Bits: #1 - active
+    function receiveOrderAssetManualNativeActive(address toActor_) external view returns (bytes32 orderHash) {
+        return OrderReceiverManualNativeLib.store().activeOrderHash[toActor_];
     }
 
     function _validateNoncePostHash(uint256 nonce_, bytes memory toPostData_) private pure {
