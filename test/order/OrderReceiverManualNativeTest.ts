@@ -9,6 +9,7 @@ import { Order } from '../../scripts/lib/contract/order/order';
 import { calcOrderHash } from '../../scripts/lib/contract/order/orderHash';
 import { createOrderSignature } from '../../scripts/lib/contract/order/orderSignature'
 import { ASSET_RECEIVE_EVENT_SIGNATURE } from '../../scripts/lib/contract/order/orderReceiverEvents';
+import { calcOrderManualReceiveNonce } from '../../scripts/lib/contract/order/orderManualReceive';
 
 import { calcEventHash } from '../../scripts/lib/contract/utils/eventHash';
 
@@ -21,6 +22,8 @@ import { FacetCutAction, facet } from '../common/facet';
 import { getFunctionSelectors } from '../common/interface';
 
 const SUFFICIENT_UNLOCK_COUNTER = parseEther('777999');
+
+const EMPTY_POST_DATA = '0x';
 
 describe('OrderReceiverManualNativeTest', function () {
   async function deployFixture() {
@@ -72,6 +75,11 @@ describe('OrderReceiverManualNativeTest', function () {
       ]),
     );
 
+    const nonce = await calcOrderManualReceiveNonce({
+      nonce: 13377331n,
+      postData: EMPTY_POST_DATA,
+    });
+
     const order: Order = {
       fromActor: otherAccount.address,
       fromActorReceiver: otherAccount.address,
@@ -90,7 +98,7 @@ describe('OrderReceiverManualNativeTest', function () {
       deadline: await nowSeconds() + hoursToSeconds(1n),
       timeToSend: 0n,
       timeToLiqSend: 0n,
-      nonce: 13377331n,
+      nonce,
     };
     const orderHash = await calcOrderHash(order);
     const receiveEventHash = await calcEventHash(ASSET_RECEIVE_EVENT_SIGNATURE, orderHash);
@@ -133,6 +141,7 @@ describe('OrderReceiverManualNativeTest', function () {
       (await facet(flash, 'OrderReceiverManualNativeFacet')).receiveOrderAssetManualNative(
         order,
         orderToSignature,
+        EMPTY_POST_DATA,
       ),
       { customError: 'ReceiveCallerMismatch()' },
     );
@@ -141,6 +150,7 @@ describe('OrderReceiverManualNativeTest', function () {
       (await facet(flash, 'OrderReceiverManualNativeFacet')).connect(accounts.other).receiveOrderAssetManualNative(
         order,
         orderToSignature,
+        EMPTY_POST_DATA,
       ),
       { customError: 'LockRefusal()' },
     );
@@ -163,6 +173,7 @@ describe('OrderReceiverManualNativeTest', function () {
       (await facet(flash, 'OrderReceiverManualNativeFacet')).connect(accounts.other).receiveOrderAssetManualNative(
         order,
         orderToSignature,
+        EMPTY_POST_DATA,
       ),
       { customError: `AddressEmptyCode("${ZeroAddress}")` },
     );
@@ -178,6 +189,7 @@ describe('OrderReceiverManualNativeTest', function () {
         await (await facet(flash, 'OrderReceiverManualNativeFacet')).connect(accounts.other).receiveOrderAssetManualNative(
           order,
           orderToSignature,
+          EMPTY_POST_DATA,
           { value: order.fromAmount },
         ),
       );
@@ -209,6 +221,7 @@ describe('OrderReceiverManualNativeTest', function () {
       (await facet(flash, 'OrderReceiverManualNativeFacet')).connect(accounts.other).receiveOrderAssetManualNative(
         order,
         orderToSignature,
+        EMPTY_POST_DATA,
         { value: order.fromAmount },
       ),
       { customError: 'OrderAlreadyReceived()' },
@@ -228,6 +241,7 @@ describe('OrderReceiverManualNativeTest', function () {
         await (await facet(flash, 'OrderReceiverManualNativeFacet')).connect(accounts.other).receiveOrderAssetManualNative(
           neighborOrder,
           neighborOrderToSignature,
+          EMPTY_POST_DATA,
           { value: neighborOrder.fromAmount },
         ),
       );
