@@ -3,7 +3,8 @@ import { parseEther, ZeroHash } from 'ethers';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 
-import { NATIVE_CRYPTO_ADDRESS } from '../../scripts/lib/contract/order/nativeCrypto';
+import { NATIVE_CRYPTO_ADDRESS } from '../../scripts/lib/contract/native/crypto';
+
 import { calcOrderActorHash } from '../../scripts/lib/contract/order/orderActorHash';
 
 import { OrderBitcoin } from '../../scripts/lib/contract/order-bitcoin/orderBitcoin';

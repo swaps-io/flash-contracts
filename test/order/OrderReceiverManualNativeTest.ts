@@ -3,6 +3,8 @@ import { parseEther, ZeroAddress } from 'ethers';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 
+import { NATIVE_CRYPTO_ADDRESS } from '../../scripts/lib/contract/native/crypto';
+
 import { Order } from '../../scripts/lib/contract/order/order';
 import { calcOrderHash } from '../../scripts/lib/contract/order/orderHash';
 import { createOrderSignature } from '../../scripts/lib/contract/order/orderSignature'
@@ -17,7 +19,6 @@ import { expectLog } from '../common/log';
 import { expectRevert } from '../common/revert';
 import { FacetCutAction, facet } from '../common/facet';
 import { getFunctionSelectors } from '../common/interface';
-import { NATIVE_CRYPTO_ADDRESS } from '../../scripts/lib/contract/order/nativeCrypto';
 
 const SUFFICIENT_UNLOCK_COUNTER = parseEther('777999');
 
