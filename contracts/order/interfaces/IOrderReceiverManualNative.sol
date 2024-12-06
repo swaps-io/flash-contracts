@@ -7,8 +7,13 @@ import {Order} from "./Order.sol";
 
 interface IOrderReceiverManualNativeErrors {
     error OrderReceiveNotNative();
+    error OrderInvalidPostData();
 }
 
-interface IOrderReceiverManualNative is IOrderReceiverManualNativeErrors, IOrderReceiverErrors, IOrderReceiverEvents {
-    function receiveOrderAssetManualNative(Order calldata order, bytes calldata toSignature) external payable;
+interface IOrderReceiverManualNativeViews {
+    function receiveOrderAssetManualNativeActive(bytes32 orderHash) external view returns (bool);
+}
+
+interface IOrderReceiverManualNative is IOrderReceiverManualNativeErrors, IOrderReceiverManualNativeViews, IOrderReceiverErrors, IOrderReceiverEvents {
+    function receiveOrderAssetManualNative(Order calldata order, bytes calldata toSignature, bytes calldata toPostData) external payable;
 }

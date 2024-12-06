@@ -24,6 +24,10 @@ library BitStorageLib {
         return _countBits(store().value[key_]);
     }
 
+    function storeBits(bytes32 key_, uint256 bits_) internal {
+        store().value[key_] = bits_;
+    }
+
     function storeBit(bytes32 key_) internal {
         store().value[key_] = 1;
     }
