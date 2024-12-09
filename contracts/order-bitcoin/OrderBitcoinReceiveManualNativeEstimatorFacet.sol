@@ -2,20 +2,15 @@
 
 pragma solidity 0.8.24;
 
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-
 import {BitStorageLib} from "../storage/BitStorageLib.sol";
 
 import {OrderReceiverLib} from "../order/OrderReceiverLib.sol";
-import {ManualNativeNonceLib} from "../order/ManualNativeNonceLib.sol";
-import {OrderReceiverManualNativeLib} from "../order/OrderReceiverManualNativeLib.sol";
+import {OrderReceiverManualNativeLib, NativeLib} from "../order/OrderReceiverManualNativeLib.sol";
 
 import {EnvLib} from "../utils/EnvLib.sol";
 import {EventHashLib} from "../utils/EventHashLib.sol";
 import {SignatureLib} from "../utils/SignatureLib.sol";
 import {Estimator} from "../utils/Estimator.sol";
-
-import {NativeLib} from "../native/NativeLib.sol";
 
 import {IOrderBitcoinReceiveManualNativeEstimator} from "./interfaces/IOrderBitcoinReceiveManualNativeEstimator.sol";
 
@@ -59,26 +54,12 @@ contract OrderBitcoinReceiveManualNativeEstimatorFacet is IOrderBitcoinReceiveMa
         if (BitStorageLib.hasBitStored(orderReceiveEventHash)) revert OrderAlreadyReceived();
 
         SignatureLib.validateSignature(orderHash, toSignature_, order_.toActor);
-        ManualNativeNonceLib.validatePostData(order_.nonce, toPostData_);
+        OrderReceiverManualNativeLib.validatePostData(order_.nonce, toPostData_);
 
         OrderBitcoinReceiverLib.store().collateralLocker.commitLock(order_.toActor, order_.collateralAmount, order_.collateralChain, order_.collateralUnlocked);
         BitStorageLib.storeBit(orderReceiveEventHash);
 
-        if (toPostData_.length == 0) NativeLib.transferFrom(caller_, order_.toActor, order_.fromAmount, value_);
-        else {
-            OrderReceiverManualNativeLib.store().activeOrderHash[order_.toActor] = orderHash;
-
-            if (order_.nonce & ManualNativeNonceLib.POST_WITH_SEND_BIT != 0) {
-                NativeLib.transferFrom(msg.sender, order_.toActor, order_.fromAmount, value_, toPostData_);
-            } else {
-                NativeLib.transferFrom(msg.sender, order_.toActor, order_.fromAmount, value_);
-
-                (bool postSuccess, bytes memory postResult) = order_.toActor.call(toPostData_);
-                if (order_.nonce & ManualNativeNonceLib.POST_ALLOW_FAIL_BIT == 0) Address.verifyCallResultFromTarget(order_.toActor, postSuccess, postResult);
-            }
-
-            delete OrderReceiverManualNativeLib.store().activeOrderHash[order_.toActor];
-        }
+        OrderReceiverManualNativeLib.transferFrom(orderHash, order_.nonce, msg.sender, order_.toActor, order_.fromAmount, toPostData_, value_);
 
         emit AssetReceive(orderHash);
     }
