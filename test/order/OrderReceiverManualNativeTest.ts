@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat';
-import { parseEther, ZeroAddress } from 'ethers';
+import { parseEther, ZeroAddress, ZeroHash } from 'ethers';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 
@@ -266,12 +266,487 @@ describe('OrderReceiverManualNativeTest', function () {
       accounts,
       flash,
       collateralManager,
-      order,
-      orderHash,
-      receiveEventHash,
+      order: originalOrder,
       trader,
     } = await loadFixture(deployFixture);
 
-    // TODO
+    // Create order with trader "to" actor & post hook call
+    const postData = trader.interface.encodeFunctionData(
+      'receiveManualNativeHook',
+      [
+        0n, // No msg.value expected
+        originalOrder.fromAmount,
+        1337n, // Test counter increment
+      ],
+    );
+    const nonce = await calcOrderManualReceiveNonce({
+      nonce: 13377331n,
+      postData,
+    });
+    const toActor = await trader.getAddress();
+    const order = {
+      ...originalOrder,
+      toActor,
+      nonce,
+    };
+    const orderHash = await calcOrderHash(order);
+    const receiveEventHash = await calcEventHash(ASSET_RECEIVE_EVENT_SIGNATURE, orderHash);
+    //
+
+    await accounts.owner.sendTransaction({
+      to: accounts.other.address,
+      value: parseEther('123'),
+    });
+
+    // "Another" is signer for trader contract
+    const orderToSignature = await createOrderSignature(order, accounts.another);
+
+    // 25 - 4 = 21 >= 21 (✅)
+    await collateralManager.commitLock(toActor, parseEther('4'), OTHER_CHAIN_ID, SUFFICIENT_UNLOCK_COUNTER);
+
+    {
+      const received = await (await facet(flash, 'OrderReceiverFacet')).orderAssetReceived(orderHash);
+      expect(received).to.be.equal(false);
+    }
+    {
+      const has = await (await facet(flash, 'BitStorageFacet')).hasHashStore(receiveEventHash);
+      expect(has).to.be.equal(false);
+    }
+    {
+      const count = await trader.counter();
+      expect(count).to.be.equal(0n);
+    }
+    {
+      const hash = await trader.lastOrderHash();
+      expect(hash).to.be.equal(ZeroHash);
+    }
+
+    await expectRevert(
+      (await facet(flash, 'OrderReceiverManualNativeFacet')).connect(accounts.other).receiveOrderAssetManualNative(
+        order,
+        orderToSignature,
+        postData + '00', // Does not match post data hash stored in 'nonce'
+      ),
+      { customError: 'OrderInvalidPostData()' },
+    );
+
+    const otherBalanceBefore = await ethers.provider.getBalance(accounts.other.address);
+    const traderBalanceBefore = await ethers.provider.getBalance(toActor);
+    const lockedCollateralBefore = await collateralManager.lockCounter(toActor, OTHER_CHAIN_ID);
+
+    let receiveGasCost: bigint;
+    {
+      const { tx, receipt } = await gasInfo(
+        'call receiveOrderAssetManualNative (first, post hook)',
+        await (await facet(flash, 'OrderReceiverManualNativeFacet')).connect(accounts.other).receiveOrderAssetManualNative(
+          order,
+          orderToSignature,
+          postData,
+          { value: order.fromAmount },
+        ),
+      );
+      expectLog({
+        contract: (await facet(flash, 'OrderReceiverFacet')), tx, receipt, name: 'AssetReceive', check: (data) => {
+          expect(data.orderHash).to.be.equal(orderHash);
+        },
+      });
+      receiveGasCost = receipt.gasUsed * receipt.gasPrice;
+    }
+
+    {
+      const received = await (await facet(flash, 'OrderReceiverFacet')).orderAssetReceived(orderHash);
+      expect(received).to.be.equal(true);
+    }
+    {
+      const has = await (await facet(flash, 'BitStorageFacet')).hasHashStore(receiveEventHash);
+      expect(has).to.be.equal(true);
+    }
+    {
+      const count = await trader.counter();
+      expect(count).to.be.equal(1337n);
+    }
+    {
+      const hash = await trader.lastOrderHash();
+      expect(hash).to.be.equal(orderHash);
+    }
+
+    const otherBalanceAfter = await ethers.provider.getBalance(accounts.other.address);
+    const traderBalanceAfter = await ethers.provider.getBalance(toActor);
+    const lockedCollateralAfter = await collateralManager.lockCounter(toActor, OTHER_CHAIN_ID);
+    expect(otherBalanceAfter).to.be.equal(otherBalanceBefore - parseEther('65') - receiveGasCost);
+    expect(traderBalanceAfter).to.be.equal(traderBalanceBefore + parseEther('65'));
+    expect(lockedCollateralAfter).to.be.equal(lockedCollateralBefore + parseEther('21'));
+
+    await expectRevert(
+      (await facet(flash, 'OrderReceiverManualNativeFacet')).connect(accounts.other).receiveOrderAssetManualNative(
+        order,
+        orderToSignature,
+        postData,
+        { value: order.fromAmount },
+      ),
+      { customError: 'OrderAlreadyReceived()' },
+    );
+  });
+
+  it('Should receive order asset with post data combined with send', async function () {
+    const {
+      accounts,
+      flash,
+      collateralManager,
+      order: originalOrder,
+      trader,
+    } = await loadFixture(deployFixture);
+
+    // Create order with trader "to" actor & post hook call
+    const postData = trader.interface.encodeFunctionData(
+      'receiveManualNativeHook',
+      [
+        originalOrder.fromAmount,
+        originalOrder.fromAmount,
+        1337n, // Test counter increment
+      ],
+    );
+    const nonce = await calcOrderManualReceiveNonce({
+      nonce: 13377331n,
+      postData,
+      shouldPostWithSend: true,
+    });
+    const toActor = await trader.getAddress();
+    const order = {
+      ...originalOrder,
+      toActor,
+      nonce,
+    };
+    const orderHash = await calcOrderHash(order);
+    const receiveEventHash = await calcEventHash(ASSET_RECEIVE_EVENT_SIGNATURE, orderHash);
+    //
+
+    await accounts.owner.sendTransaction({
+      to: accounts.other.address,
+      value: parseEther('123'),
+    });
+
+    // "Another" is signer for trader contract
+    const orderToSignature = await createOrderSignature(order, accounts.another);
+
+    // 25 - 4 = 21 >= 21 (✅)
+    await collateralManager.commitLock(toActor, parseEther('4'), OTHER_CHAIN_ID, SUFFICIENT_UNLOCK_COUNTER);
+
+    {
+      const received = await (await facet(flash, 'OrderReceiverFacet')).orderAssetReceived(orderHash);
+      expect(received).to.be.equal(false);
+    }
+    {
+      const has = await (await facet(flash, 'BitStorageFacet')).hasHashStore(receiveEventHash);
+      expect(has).to.be.equal(false);
+    }
+    {
+      const count = await trader.counter();
+      expect(count).to.be.equal(0n);
+    }
+    {
+      const hash = await trader.lastOrderHash();
+      expect(hash).to.be.equal(ZeroHash);
+    }
+
+    await expectRevert(
+      (await facet(flash, 'OrderReceiverManualNativeFacet')).connect(accounts.other).receiveOrderAssetManualNative(
+        order,
+        orderToSignature,
+        postData + '00', // Does not match post data hash stored in 'nonce'
+      ),
+      { customError: 'OrderInvalidPostData()' },
+    );
+
+    const otherBalanceBefore = await ethers.provider.getBalance(accounts.other.address);
+    const traderBalanceBefore = await ethers.provider.getBalance(toActor);
+    const lockedCollateralBefore = await collateralManager.lockCounter(toActor, OTHER_CHAIN_ID);
+
+    let receiveGasCost: bigint;
+    {
+      const { tx, receipt } = await gasInfo(
+        'call receiveOrderAssetManualNative (first, post hook, send combined)',
+        await (await facet(flash, 'OrderReceiverManualNativeFacet')).connect(accounts.other).receiveOrderAssetManualNative(
+          order,
+          orderToSignature,
+          postData,
+          { value: order.fromAmount },
+        ),
+      );
+      expectLog({
+        contract: (await facet(flash, 'OrderReceiverFacet')), tx, receipt, name: 'AssetReceive', check: (data) => {
+          expect(data.orderHash).to.be.equal(orderHash);
+        },
+      });
+      receiveGasCost = receipt.gasUsed * receipt.gasPrice;
+    }
+
+    {
+      const received = await (await facet(flash, 'OrderReceiverFacet')).orderAssetReceived(orderHash);
+      expect(received).to.be.equal(true);
+    }
+    {
+      const has = await (await facet(flash, 'BitStorageFacet')).hasHashStore(receiveEventHash);
+      expect(has).to.be.equal(true);
+    }
+    {
+      const count = await trader.counter();
+      expect(count).to.be.equal(1337n);
+    }
+    {
+      const hash = await trader.lastOrderHash();
+      expect(hash).to.be.equal(orderHash);
+    }
+
+    const otherBalanceAfter = await ethers.provider.getBalance(accounts.other.address);
+    const traderBalanceAfter = await ethers.provider.getBalance(toActor);
+    const lockedCollateralAfter = await collateralManager.lockCounter(toActor, OTHER_CHAIN_ID);
+    expect(otherBalanceAfter).to.be.equal(otherBalanceBefore - parseEther('65') - receiveGasCost);
+    expect(traderBalanceAfter).to.be.equal(traderBalanceBefore + parseEther('65'));
+    expect(lockedCollateralAfter).to.be.equal(lockedCollateralBefore + parseEther('21'));
+
+    await expectRevert(
+      (await facet(flash, 'OrderReceiverManualNativeFacet')).connect(accounts.other).receiveOrderAssetManualNative(
+        order,
+        orderToSignature,
+        postData,
+        { value: order.fromAmount },
+      ),
+      { customError: 'OrderAlreadyReceived()' },
+    );
+  });
+
+  it('Should report core hook gas', async function () {
+    const {
+      accounts,
+      flash,
+      collateralManager,
+      order: originalOrder,
+      trader,
+    } = await loadFixture(deployFixture);
+
+    // Create order with trader "to" actor & post hook call
+    const postData = trader.interface.encodeFunctionData('coreHook');
+    const nonce = await calcOrderManualReceiveNonce({
+      nonce: 13377331n,
+      postData,
+    });
+    const toActor = await trader.getAddress();
+    const order = {
+      ...originalOrder,
+      toActor,
+      nonce,
+    };
+    //
+
+    await accounts.owner.sendTransaction({
+      to: accounts.other.address,
+      value: parseEther('123'),
+    });
+
+    // "Another" is signer for trader contract
+    const orderToSignature = await createOrderSignature(order, accounts.another);
+
+    // 25 - 4 = 21 >= 21 (✅)
+    await collateralManager.commitLock(toActor, parseEther('4'), OTHER_CHAIN_ID, SUFFICIENT_UNLOCK_COUNTER);
+
+    await gasInfo(
+      'call receiveOrderAssetManualNative (first, post core hook)',
+      await (await facet(flash, 'OrderReceiverManualNativeFacet')).connect(accounts.other).receiveOrderAssetManualNative(
+        order,
+        orderToSignature,
+        postData,
+        { value: order.fromAmount },
+      ),
+    );
+  });
+
+  it('Should report core combined hook gas', async function () {
+    const {
+      accounts,
+      flash,
+      collateralManager,
+      order: originalOrder,
+      trader,
+    } = await loadFixture(deployFixture);
+
+    // Create order with trader "to" actor & post hook call
+    const postData = trader.interface.encodeFunctionData('coreHookPayable');
+    const nonce = await calcOrderManualReceiveNonce({
+      nonce: 13377331n,
+      postData,
+      shouldPostWithSend: true,
+    });
+    const toActor = await trader.getAddress();
+    const order = {
+      ...originalOrder,
+      toActor,
+      nonce,
+    };
+    //
+
+    await accounts.owner.sendTransaction({
+      to: accounts.other.address,
+      value: parseEther('123'),
+    });
+
+    // "Another" is signer for trader contract
+    const orderToSignature = await createOrderSignature(order, accounts.another);
+
+    // 25 - 4 = 21 >= 21 (✅)
+    await collateralManager.commitLock(toActor, parseEther('4'), OTHER_CHAIN_ID, SUFFICIENT_UNLOCK_COUNTER);
+
+    await gasInfo(
+      'call receiveOrderAssetManualNative (first, post core hook, send combined)',
+      await (await facet(flash, 'OrderReceiverManualNativeFacet')).connect(accounts.other).receiveOrderAssetManualNative(
+        order,
+        orderToSignature,
+        postData,
+        { value: order.fromAmount },
+      ),
+    );
+  });
+
+  it('Should revert if post hook failure not allowed', async function () {
+    const {
+      accounts,
+      flash,
+      order: originalOrder,
+      trader,
+    } = await loadFixture(deployFixture);
+
+    // Create order with trader "to" actor & post hook call
+    const postData = trader.interface.encodeFunctionData(
+      'receiveManualNativeHook',
+      [
+        0n, // No msg.value expected
+        0n, // Trigger unexpected balance revert
+        1337n, // Test counter increment
+      ],
+    );
+    const nonce = await calcOrderManualReceiveNonce({
+      nonce: 13377331n,
+      postData,
+    });
+    const toActor = await trader.getAddress();
+    const order = {
+      ...originalOrder,
+      toActor,
+      nonce,
+    };
+    //
+
+    await accounts.owner.sendTransaction({
+      to: accounts.other.address,
+      value: parseEther('123'),
+    });
+
+    // "Another" is signer for trader contract
+    const orderToSignature = await createOrderSignature(order, accounts.another);
+
+    await expectRevert(
+      (await facet(flash, 'OrderReceiverManualNativeFacet')).connect(accounts.other).receiveOrderAssetManualNative(
+        order,
+        orderToSignature,
+        postData,
+        { value: order.fromAmount },
+      ),
+      { customError: `BalanceUnexpected(${order.fromAmount}, 0)` },
+    );
+  });
+
+  it('Should not revert if post hook failure is allowed', async function () {
+    const {
+      accounts,
+      flash,
+      order: originalOrder,
+      trader,
+    } = await loadFixture(deployFixture);
+
+    // Create order with trader "to" actor & post hook call
+    const postData = trader.interface.encodeFunctionData(
+      'receiveManualNativeHook',
+      [
+        0n, // No msg.value expected
+        0n, // Trigger unexpected balance revert
+        1337n, // Test counter increment
+      ],
+    );
+    const nonce = await calcOrderManualReceiveNonce({
+      nonce: 13377331n,
+      postData,
+      shouldPostAllowFail: true,
+    });
+    const toActor = await trader.getAddress();
+    const order = {
+      ...originalOrder,
+      toActor,
+      nonce,
+    };
+    //
+
+    await accounts.owner.sendTransaction({
+      to: accounts.other.address,
+      value: parseEther('123'),
+    });
+
+    // "Another" is signer for trader contract
+    const orderToSignature = await createOrderSignature(order, accounts.another);
+
+    (await facet(flash, 'OrderReceiverManualNativeFacet')).connect(accounts.other).receiveOrderAssetManualNative(
+      order,
+      orderToSignature,
+      postData,
+      { value: order.fromAmount },
+    );
+  });
+
+  it('Should revert if post hook combined with send', async function () {
+    const {
+      accounts,
+      flash,
+      order: originalOrder,
+      trader,
+    } = await loadFixture(deployFixture);
+
+    // Create order with trader "to" actor & post hook call
+    const postData = trader.interface.encodeFunctionData(
+      'receiveManualNativeHook',
+      [
+        originalOrder.fromAmount,
+        0n, // Trigger unexpected balance revert
+        1337n, // Test counter increment
+      ],
+    );
+    const nonce = await calcOrderManualReceiveNonce({
+      nonce: 13377331n,
+      postData,
+      shouldPostWithSend: true,
+    });
+    const toActor = await trader.getAddress();
+    const order = {
+      ...originalOrder,
+      toActor,
+      nonce,
+    };
+    //
+
+    await accounts.owner.sendTransaction({
+      to: accounts.other.address,
+      value: parseEther('123'),
+    });
+
+    // "Another" is signer for trader contract
+    const orderToSignature = await createOrderSignature(order, accounts.another);
+
+    await expectRevert(
+      (await facet(flash, 'OrderReceiverManualNativeFacet')).connect(accounts.other).receiveOrderAssetManualNative(
+        order,
+        orderToSignature,
+        postData,
+        { value: order.fromAmount },
+      ),
+      { customError: `BalanceUnexpected(${order.fromAmount}, 0)` },
+    );
   });
 });
