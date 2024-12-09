@@ -7,5 +7,5 @@ import {IOrderReceiverManualNativeErrors, IOrderReceiverErrors, IOrderReceiverEv
 import {OrderBitcoin} from "./OrderBitcoin.sol";
 
 interface IOrderBitcoinReceiverManualNative is IOrderReceiverManualNativeErrors, IOrderReceiverErrors, IOrderReceiverEvents {
-    function receiveOrderBitcoinAssetManualNative(OrderBitcoin calldata order, bytes calldata toSignature) external payable;
+    function receiveOrderBitcoinAssetManualNative(OrderBitcoin calldata order, bytes calldata toSignature, bytes calldata toPostData) external payable;
 }
