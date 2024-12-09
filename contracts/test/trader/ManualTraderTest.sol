@@ -28,7 +28,7 @@ contract ManualTraderTest is IERC1271 {
         _;
     }
 
-    receive() payable external {}
+    receive() external payable {}
 
     function isValidSignature(bytes32 hash_, bytes memory signature_) external view returns (bytes4) {
         return ECDSA.recover(hash_, signature_) == signer ? this.isValidSignature.selector : bytes4(0);

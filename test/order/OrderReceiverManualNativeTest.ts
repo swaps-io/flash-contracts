@@ -188,7 +188,7 @@ describe('OrderReceiverManualNativeTest', function () {
         orderToSignature,
         '0x01', // Does not match 'EMPTY_POST_DATA' hash stored in 'nonce'
       ),
-      { customError: 'OrderInvalidPostData()' },
+      { customError: 'InvalidNoncePostData()' },
     );
 
     const otherBalanceBefore = await ethers.provider.getBalance(accounts.other.address);
@@ -327,7 +327,7 @@ describe('OrderReceiverManualNativeTest', function () {
         orderToSignature,
         postData + '00', // Does not match post data hash stored in 'nonce'
       ),
-      { customError: 'OrderInvalidPostData()' },
+      { customError: 'InvalidNoncePostData()' },
     );
 
     const otherBalanceBefore = await ethers.provider.getBalance(accounts.other.address);
@@ -455,7 +455,7 @@ describe('OrderReceiverManualNativeTest', function () {
         orderToSignature,
         postData + '00', // Does not match post data hash stored in 'nonce'
       ),
-      { customError: 'OrderInvalidPostData()' },
+      { customError: 'InvalidNoncePostData()' },
     );
 
     const otherBalanceBefore = await ethers.provider.getBalance(accounts.other.address);

@@ -7,7 +7,6 @@ import {Order} from "./Order.sol";
 
 interface IOrderReceiverManualNativeErrors {
     error OrderReceiveNotNative();
-    error OrderInvalidPostData();
 }
 
 interface IOrderReceiverManualNativeViews {
