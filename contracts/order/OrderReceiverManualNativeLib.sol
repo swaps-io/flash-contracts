@@ -24,6 +24,11 @@ library OrderReceiverManualNativeLib {
 
     function validatePostData(uint256 nonce_, bytes memory postData_) internal pure {
         uint256 nonceHash = nonce_ & POST_HASH_BITS;
+        if (nonceHash == 0) {
+            if (postData_.length != 0) revert InvalidNoncePostData();
+            return;
+        }
+
         uint256 dataHash = uint256(keccak256(postData_)) & POST_HASH_BITS;
         if (nonceHash != dataHash) revert InvalidNoncePostData();
     }

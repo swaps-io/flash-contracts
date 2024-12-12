@@ -30,19 +30,22 @@ export const calcOrderManualReceiveNonce = async ({
     );
   }
 
-  let postHashHex: string;
+  let postHash: bigint;
   if (typeof postData === 'string') {
-    postHashHex = await evm.keccak256(postData);
+    if (postData === '0x') {
+      postHash = 0n; // Trigger empty data verification w/o `keccak256`
+    } else {
+      const hash = await evm.keccak256(postData);
+      postHash = BigInt(hash);
+    }
   } else {
-    postHashHex = postData.hash;
-  }
-
-  const postHash = BigInt(postHashHex);
-  if (postHash < MIN_HASH_VALUE || postHash > MAX_HASH_VALUE) {
-    throw new Error(
-      `Invalid manual receive nonce post data hash value. ` +
-      `Must be between ${MIN_HASH_VALUE} and ${MAX_HASH_VALUE}`
-    );
+    postHash = BigInt(postData.hash);
+    if (postHash < MIN_HASH_VALUE || postHash > MAX_HASH_VALUE) {
+      throw new Error(
+        `Invalid manual receive nonce post data hash value. ` +
+        `Must be between ${MIN_HASH_VALUE} and ${MAX_HASH_VALUE}`
+      );
+    }
   }
 
   nonce |= postHash & NONCE_POST_HASH_BITS;
