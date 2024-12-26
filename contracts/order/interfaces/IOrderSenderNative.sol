@@ -11,7 +11,7 @@ interface IOrderSenderNativeErrors {
 }
 
 interface IOrderSenderNative is IOrderSenderNativeErrors, IOrderSenderErrors, IOrderSenderEvents {
-    function sendOrderAssetNative(Order calldata order) external;
+    function sendOrderAssetNative(Order calldata order) external payable;
 
-    function sendOrderLiqAssetNative(Order calldata order) external;
+    function sendOrderLiqAssetNative(Order calldata order) external payable;
 }

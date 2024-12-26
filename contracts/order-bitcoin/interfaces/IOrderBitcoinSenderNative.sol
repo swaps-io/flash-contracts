@@ -9,7 +9,7 @@ import {IOrderSenderNativeErrors} from "../../order/interfaces/IOrderSenderNativ
 import {IOrderSenderErrors, IOrderSenderEvents} from "../../order/interfaces/IOrderSender.sol";
 
 interface IOrderBitcoinSenderNative is IOrderSenderNativeErrors, IOrderSenderErrors, IOrderSenderEvents {
-    function sendOrderBitcoinAssetNative(OrderBitcoin calldata order) external;
+    function sendOrderBitcoinAssetNative(OrderBitcoin calldata order) external payable;
 
-    function sendOrderBitcoinLiqAssetNative(OrderBitcoin calldata order) external;
+    function sendOrderBitcoinLiqAssetNative(OrderBitcoin calldata order) external payable;
 }

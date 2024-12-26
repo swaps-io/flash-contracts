@@ -23,6 +23,10 @@ describe('DiamondHashValueTest', function () {
     checkHash('com.swaps-io.flash.diamond.storage.OrderResolverLib', '0x93c089dec1346f3c9d111f6974d7849e6029bef026e900d74d94361b46efcbf1');
   });
 
+  it('Should use expected "com.swaps-io.flash.diamond.storage.OrderReceiverManualNativeLib" hash', async function () {
+    checkHash('com.swaps-io.flash.diamond.storage.OrderReceiverManualNativeLib', '0x41e920b0811adecf39a5e7195128248e4d371314e929cecde761115a68cca65f');
+  });
+
   it('Should use expected "com.swaps-io.flash.diamond.storage.OrderResolverFacet.Initializable" hash', async function () {
     checkHash('com.swaps-io.flash.diamond.storage.OrderResolverFacet.Initializable', '0x54caa9b968ad4f9d88346785551baf135de04b06a3673fc87a25276093a8f04b');
   });

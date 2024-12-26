@@ -15,10 +15,14 @@ describe('CallEstimatorTest', function () {
     const CallEstimatorFacet = await ethers.getContractFactory('CallEstimatorFacet');
     const estimator = await CallEstimatorFacet.deploy();
 
+    const ProxyCallTest = await ethers.getContractFactory('ProxyCallTest');
+    const proxy = await ProxyCallTest.deploy();
+
     return {
       accounts,
       token,
       estimator,
+      proxy,
     };
   }
 
@@ -34,6 +38,29 @@ describe('CallEstimatorTest', function () {
     );
     expect(gas).to.be.greaterThanOrEqual(73_500n);
     expect(gas).to.be.lessThanOrEqual(74_500n);
+  });
+
+  it('Should estimate call gas with value', async function () {
+    const { accounts, token, estimator, proxy } = await loadFixture(deployFixture);
+
+    await accounts[1].sendTransaction({
+      to: await proxy.getAddress(),
+      value: 123_456_789n,
+    });
+
+    const zeroSigner = new VoidSigner(ZeroAddress, ethers.provider);
+
+    const gas = await estimator.connect(zeroSigner).estimateCall.estimateGas(
+      await proxy.getAddress(),
+      proxy.interface.encodeFunctionData('call', [
+        await token.getAddress(),
+        token.interface.encodeFunctionData('mintValue', [accounts[0].address]),
+        123_456_789n,
+      ]),
+      0n,
+    );
+    expect(gas).to.be.greaterThanOrEqual(85_000n);
+    expect(gas).to.be.lessThanOrEqual(87_000n);
   });
 
   it('Should revert with same error as called contract', async function () {

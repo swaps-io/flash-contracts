@@ -10,7 +10,11 @@ import {IOrderSenderErrors, IOrderSenderEvents} from "../../order/interfaces/IOr
 import {OrderBitcoin} from "./OrderBitcoin.sol";
 
 interface IOrderBitcoinSendNativeEstimator is IEstimator, IOrderSenderNativeErrors, IOrderSenderErrors, IOrderSenderEvents {
-    function estimateSendOrderBitcoinAssetNative(OrderBitcoin calldata order, address caller) external;
+    function estimateSendOrderBitcoinAssetNative(OrderBitcoin calldata order, address caller) external payable;
 
-    function estimateSendOrderBitcoinLiqAssetNative(OrderBitcoin calldata order, address caller) external;
+    function estimateSendOrderBitcoinAssetNative(OrderBitcoin calldata order, address caller, uint256 value) external payable;
+
+    function estimateSendOrderBitcoinLiqAssetNative(OrderBitcoin calldata order, address caller) external payable;
+
+    function estimateSendOrderBitcoinLiqAssetNative(OrderBitcoin calldata order, address caller, uint256 value) external payable;
 }
