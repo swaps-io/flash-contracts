@@ -2,7 +2,7 @@
 
 // solhint-disable one-contract-per-file
 
-pragma solidity 0.8.24;
+pragma solidity ^0.8.24;
 
 import {OrderSenderLib} from "../../order/OrderSenderLib.sol";
 
